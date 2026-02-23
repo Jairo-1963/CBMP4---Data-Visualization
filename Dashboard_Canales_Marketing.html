@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Dashboard - Análisis por Canales</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #5D6D7E;
+            --secondary: #85929E;
+            --accent: #34495E;
+            --metal-light: #AEB6BF;
+            --metal-dark: #2C3E50;
+            --cyan: #17A2B8;
+            --teal: #20C997;
+            --orange: #FD7E14;
+            --purple: #6F42C1;
+            --bg-white: #FFFFFF;
+            --bg-light: #F8F9FA;
+            --bg-metal: #E8EAED;
+            --text-dark: #212529;
+            --text-muted: #6C757D;
+            --border: #DEE2E6;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-metal) 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+        
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--metal-dark), var(--primary));
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--bg-white);
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: var(--metal-light);
+            font-size: 1.1rem;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            background: var(--bg-white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        select, button {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            background: var(--bg-white);
+            color: var(--text-dark);
+            font-family: inherit;
+            font-size: 0.95rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        select:hover {
+            border-color: var(--primary);
+        }
+        
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: var(--bg-white);
+            border: none;
+            font-weight: 600;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(52, 73, 94, 0.4);
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .kpi-card {
+            background: var(--bg-white);
+            padding: 1.8rem;
+            border-radius: 12px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .kpi-card:nth-child(1) { border-left-color: var(--primary); }
+        .kpi-card:nth-child(2) { border-left-color: var(--cyan); }
+        .kpi-card:nth-child(3) { border-left-color: var(--secondary); }
+        .kpi-card:nth-child(4) { border-left-color: var(--teal); }
+        .kpi-card:nth-child(5) { border-left-color: var(--metal-dark); }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .kpi-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        
+        .kpi-value {
+            font-size: 2.3rem;
+            font-weight: 700;
+            color: var(--metal-dark);
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+        
+        .kpi-change {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-card {
+            background: var(--bg-white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--primary);
+        }
+        
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--metal-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .chart-title::before {
+            content: '';
+            width: 4px;
+            height: 1.5rem;
+            background: linear-gradient(180deg, var(--primary), var(--cyan));
+            border-radius: 2px;
+        }
+        
+        .table-container {
+            background: var(--bg-white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--primary);
+            font-weight: 700;
+            background: var(--bg-light);
+        }
+        
+        tbody tr:hover {
+            background: var(--bg-light);
+        }
+        
+        .insights-section {
+            background: linear-gradient(135deg, var(--bg-white), var(--bg-metal));
+            padding: 2.5rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+        
+        .insights-title {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--metal-dark);
+            font-weight: 700;
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .insight-card {
+            background: var(--bg-white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 5px solid var(--accent);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .insight-card:hover {
+            transform: translateX(8px);
+        }
+        
+        .insight-card:nth-child(1) { border-left-color: var(--primary); }
+        .insight-card:nth-child(2) { border-left-color: var(--cyan); }
+        .insight-card:nth-child(3) { border-left-color: var(--teal); }
+        
+        .insight-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+        
+        .insight-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+            color: var(--metal-dark);
+        }
+        
+        .insight-description {
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+        
+        .business-questions {
+            background: var(--bg-white);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px solid var(--primary);
+            margin-top: 2rem;
+        }
+        
+        .question-block {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .question-title {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .question-answer {
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .charts-grid, .kpi-grid, .insights-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>🛒 Dashboard por Canales de Venta</h1>
+            <p class="subtitle">Análisis de Comportamiento de Compra - Grupo 6</p>
+        </div>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <div class="filter-label">🛒 Canal Principal</div>
+                <select id="canalFilter">
+                    <option value="all">Todos los Canales</option>
+                    <option value="Tienda">Tienda</option>
+                    <option value="Web">Web</option>
+                    <option value="Catálogo">Catálogo</option>
+                    <option value="Descuentos">Descuentos</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-label">👨‍👩‍👧‍👦 Estado Civil</div>
+                <select id="maritalFilter">
+                    <option value="all">Todos</option>
+                    <option value="Married">Casado</option>
+                    <option value="Together">En pareja</option>
+                    <option value="Single">Soltero</option>
+                    <option value="Divorced">Divorciado</option>
+                    <option value="Widow">Viudo</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-label">🎓 Educación</div>
+                <select id="educationFilter">
+                    <option value="all">Todos</option>
+                    <option value="Graduation">Graduación</option>
+                    <option value="PhD">PhD</option>
+                    <option value="Master">Máster</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-label">&nbsp;</div>
+                <button onclick="resetFilters()">🔄 Resetear</button>
+            </div>
+        </div>
+        
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">💰 Ventas por Canal</div>
+                <div class="kpi-value" id="kpiSales">$0</div>
+                <div class="kpi-change" id="salesPercent">0% del total</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">📦 Categoría Líder</div>
+                <div class="kpi-value" id="kpiCategory">Vinos</div>
+                <div class="kpi-change" id="categoryAmount">$0</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">🎫 Ticket Promedio</div>
+                <div class="kpi-value" id="kpiTicket">$0</div>
+                <div class="kpi-change">Por transacción</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">🌐 Conversión Web</div>
+                <div class="kpi-value" id="kpiConversion">76.8%</div>
+                <div class="kpi-change">Compras/Visitas</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">🔄 Frecuencia</div>
+                <div class="kpi-value" id="kpiFrequency">0</div>
+                <div class="kpi-change">Compras/cliente</div>
+            </div>
+        </div>
+        
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">📊 KPI 1: Ventas Totales por Canal</div>
+                <canvas id="channelSalesChart"></canvas>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-title">🍷 KPI 2: Gasto por Categoría en Canal</div>
+                <canvas id="categoryByChannelChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">👨‍👩‍👧‍👦 KPI 3: Ticket Promedio por Estado Civil</div>
+                <canvas id="ticketByMaritalChart"></canvas>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-title">🔄 KPI 5: Frecuencia de Compra por Canal</div>
+                <canvas id="frequencyChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <div class="chart-title">🏆 KPI 2: Detalle de Categorías por Canal</div>
+            <table id="categoryTable">
+                <thead>
+                    <tr>
+                        <th>Canal</th>
+                        <th>Vinos</th>
+                        <th>Carnes</th>
+                        <th>Pescados</th>
+                        <th>Frutas</th>
+                        <th>Dulces</th>
+                        <th>Oro</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        
+        <div class="insights-section">
+            <h2 class="insights-title">🎯 Insights Estratégicos por Canal</h2>
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <div class="insight-number">01</div>
+                    <div class="insight-title">🏪 Tienda Domina con 39.2%</div>
+                    <div class="insight-description">
+                        <strong>Hallazgo:</strong> Canal Tienda genera <strong>$486K (39.2%)</strong> del total. Ticket promedio $37.90 y mayor frecuencia (5.85 compras/cliente).<br><br>
+                        <strong>Acción:</strong> Fortalecer experiencia en tienda y optimizar inventario de Vinos (categoría líder con $262K).
+                    </div>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-number">02</div>
+                    <div class="insight-title">🌐 Web: Alta Conversión 76.8%</div>
+                    <div class="insight-description">
+                        <strong>Oportunidad:</strong> Canal Web muestra <strong>conversión excepcional</strong> (76.84%). Genera $333K (26.9%).<br><br>
+                        <strong>Decisión:</strong> Invertir en UX digital y ampliar catálogo online. Vinos representa 55.6% de ventas web.
+                    </div>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-number">03</div>
+                    <div class="insight-title">📖 Catálogo: Mayor Ticket $49.60</div>
+                    <div class="insight-description">
+                        <strong>Perfil:</strong> Catálogo tiene el <strong>ticket promedio más alto</strong> ($49.60). Genera $289K (23.3%).<br><br>
+                        <strong>Estrategia:</strong> Segmento premium responde bien a catálogo. Casados y Solteros lideran (ticket >$48).
+                    </div>
+                </div>
+            </div>
+            
+            <div class="business-questions">
+                <h3 style="color: var(--metal-dark); margin-bottom: 1.5rem; font-size: 1.5rem;">❓ Preguntas de Negocio</h3>
+                
+                <div class="question-block">
+                    <div class="question-title">1. ¿Qué canal genera mayor volumen de compras?</div>
+                    <div class="question-answer">
+                        <strong>Respuesta:</strong> <strong>Tienda</strong> lidera con 12,841 compras (39.2%) y $486K en ventas. Le sigue Web (9,042 compras, 27.5%), Catálogo (5,833 compras, 17.8%) y Descuentos (5,112 compras, 15.6%).
+                    </div>
+                </div>
+                
+                <div class="question-block">
+                    <div class="question-title">2. ¿Qué categoría concentra mayor gasto por canal?</div>
+                    <div class="question-answer">
+                        <strong>Respuesta:</strong> <strong>Vinos</strong> domina en TODOS los canales: Tienda ($262K, 54%), Web ($185K, 55.6%), Catálogo ($150K, 52%), Descuentos ($76K, 58%). Carnes es segunda categoría consistente.
+                    </div>
+                </div>
+                
+                <div class="question-block">
+                    <div class="question-title">3. ¿Cuál es el ticket promedio por canal?</div>
+                    <div class="question-answer">
+                        <strong>Respuesta:</strong> <strong>Catálogo</strong> tiene mayor ticket ($49.60), seguido por Tienda ($37.90), Web ($36.89) y Descuentos ($25.71). Clientes Solteros tienen tickets más altos en todos los canales.
+                    </div>
+                </div>
+                
+                <div class="question-block">
+                    <div class="question-title">4. ¿Relación visitas web vs compras?</div>
+                    <div class="question-answer">
+                        <strong>Respuesta:</strong> Conversión web de <strong>76.84%</strong> (9,042 compras / 11,768 visitas). Muy alta comparada con e-commerce estándar (2-3%). Indica excelente UX y clientes con alta intención de compra.
+                    </div>
+                </div>
+                
+                <div class="question-block">
+                    <div class="question-title">5. ¿Frecuencia de compra por canal?</div>
+                    <div class="question-answer">
+                        <strong>Respuesta:</strong> Tienda lidera frecuencia (5.85 compras/cliente), seguido por Web (4.18), Catálogo (3.57) y Descuentos (2.36). <strong>Casados</strong> son más activos en todos los canales.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const channelData = {
+            sales: {
+                'Tienda': 486621.60,
+                'Web': 333558.99,
+                'Catálogo': 289295.36,
+                'Descuentos': 131411.06
+            },
+            categories: {
+                'Tienda': { Vinos: 262662, Carnes: 143712, Pescados: 33121, Frutas: 23358, Dulces: 23767, Oro: 36839 },
+                'Web': { Vinos: 185512, Carnes: 94661, Pescados: 21868, Frutas: 15432, Dulces: 16085, Oro: 27089 },
+                'Catálogo': { Vinos: 150264, Carnes: 91567, Pescados: 19928, Frutas: 13592, Dulces: 13944, Oro: 20172 },
+                'Descuentos': { Vinos: 76650, Carnes: 34571, Pescados: 8335, Frutas: 5834, Dulces: 6021, Oro: 13044 }
+            },
+            tickets: {
+                'Tienda': { Married: 36.41, Together: 37.86, Single: 40.46, Divorced: 37.48, Widow: 40.30 },
+                'Web': { Married: 36.05, Together: 36.80, Single: 38.00, Divorced: 37.26, Widow: 38.97 },
+                'Catálogo': { Married: 48.53, Together: 50.46, Single: 52.41, Divorced: 45.24, Widow: 50.43 },
+                'Descuentos': { Married: 25.42, Together: 25.67, Single: 25.01, Divorced: 26.90, Widow: 29.48 }
+            },
+            frequency: { Tienda: 5.85, Web: 4.18, Catálogo: 3.57, Descuentos: 2.36 },
+            transactions: { Tienda: 12841, Web: 9042, Catálogo: 5833, Descuentos: 5112 }
+        };
+        
+        let charts = {};
+        let currentChannel = 'all';
+        
+        function applyFilters() {
+            currentChannel = document.getElementById('canalFilter').value;
+            updateDashboard();
+        }
+        
+        function resetFilters() {
+            document.getElementById('canalFilter').value = 'all';
+            document.getElementById('maritalFilter').value = 'all';
+            document.getElementById('educationFilter').value = 'all';
+            currentChannel = 'all';
+            updateDashboard();
+        }
+        
+        function updateDashboard() {
+            updateKPIs();
+            updateCharts();
+            updateTable();
+        }
+        
+        function updateKPIs() {
+            const total = Object.values(channelData.sales).reduce((a, b) => a + b, 0);
+            
+            if (currentChannel === 'all') {
+                document.getElementById('kpiSales').textContent = `$${(total/1000).toFixed(0)}K`;
+                document.getElementById('salesPercent').textContent = '100% del total';
+                document.getElementById('kpiCategory').textContent = 'Vinos';
+                document.getElementById('categoryAmount').textContent = '$675K en todos';
+                document.getElementById('kpiTicket').textContent = '$37.80';
+                document.getElementById('kpiFrequency').textContent = '12.6';
+            } else {
+                const sales = channelData.sales[currentChannel];
+                const percent = (sales / total * 100).toFixed(1);
+                document.getElementById('kpiSales').textContent = `$${(sales/1000).toFixed(0)}K`;
+                document.getElementById('salesPercent').textContent = `${percent}% del total`;
+                
+                const categories = channelData.categories[currentChannel];
+                const maxCat = Object.entries(categories).reduce((a, b) => b[1] > a[1] ? b : a);
+                document.getElementById('kpiCategory').textContent = maxCat[0];
+                document.getElementById('categoryAmount').textContent = `$${(maxCat[1]/1000).toFixed(0)}K`;
+                
+                const ticket = sales / channelData.transactions[currentChannel];
+                document.getElementById('kpiTicket').textContent = `$${ticket.toFixed(2)}`;
+                document.getElementById('kpiFrequency').textContent = channelData.frequency[currentChannel].toFixed(1);
+            }
+        }
+        
+        function updateCharts() {
+            // Chart 1: Ventas por Canal
+            if (charts.sales) charts.sales.destroy();
+            const ctx1 = document.getElementById('channelSalesChart').getContext('2d');
+            charts.sales = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(channelData.sales),
+                    datasets: [{
+                        label: 'Ventas',
+                        data: Object.values(channelData.sales),
+                        backgroundColor: ['#5D6D7E', '#17A2B8', '#85929E', '#20C997'],
+                        borderWidth: 2,
+                        borderColor: '#2C3E50'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `Ventas: $${(ctx.parsed.y/1000).toFixed(0)}K`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) => '$' + (value/1000).toFixed(0) + 'K'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Chart 2: Categorías por Canal
+            if (charts.category) charts.category.destroy();
+            const ctx2 = document.getElementById('categoryByChannelChart').getContext('2d');
+            const channel = currentChannel === 'all' ? 'Tienda' : currentChannel;
+            const catData = channelData.categories[channel];
+            charts.category = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(catData),
+                    datasets: [{
+                        data: Object.values(catData),
+                        backgroundColor: ['#5D6D7E', '#85929E', '#17A2B8', '#20C997', '#6C757D', '#AEB6BF'],
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right' },
+                        title: {
+                            display: true,
+                            text: `Canal: ${channel}`
+                        }
+                    }
+                }
+            });
+            
+            // Chart 3: Ticket por Estado Civil
+            if (charts.ticket) charts.ticket.destroy();
+            const ctx3 = document.getElementById('ticketByMaritalChart').getContext('2d');
+            const ticketChannel = currentChannel === 'all' ? 'Tienda' : currentChannel;
+            const ticketData = channelData.tickets[ticketChannel];
+            charts.ticket = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(ticketData),
+                    datasets: [{
+                        label: 'Ticket Promedio',
+                        data: Object.values(ticketData),
+                        backgroundColor: '#5D6D7E',
+                        borderWidth: 2,
+                        borderColor: '#34495E'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: `Canal: ${ticketChannel}`
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) => '$' + value
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Chart 4: Frecuencia
+            if (charts.frequency) charts.frequency.destroy();
+            const ctx4 = document.getElementById('frequencyChart').getContext('2d');
+            charts.frequency = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(channelData.frequency),
+                    datasets: [{
+                        label: 'Compras/Cliente',
+                        data: Object.values(channelData.frequency),
+                        backgroundColor: '#17A2B8',
+                        borderWidth: 2,
+                        borderColor: '#138496'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        function updateTable() {
+            const tbody = document.querySelector('#categoryTable tbody');
+            tbody.innerHTML = '';
+            
+            Object.keys(channelData.categories).forEach(canal => {
+                const row = tbody.insertRow();
+                const cats = channelData.categories[canal];
+                const total = Object.values(cats).reduce((a, b) => a + b, 0);
+                
+                row.innerHTML = `
+                    <td><strong>${canal}</strong></td>
+                    <td>$${(cats.Vinos/1000).toFixed(0)}K</td>
+                    <td>$${(cats.Carnes/1000).toFixed(0)}K</td>
+                    <td>$${(cats.Pescados/1000).toFixed(0)}K</td>
+                    <td>$${(cats.Frutas/1000).toFixed(0)}K</td>
+                    <td>$${(cats.Dulces/1000).toFixed(0)}K</td>
+                    <td>$${(cats.Oro/1000).toFixed(0)}K</td>
+                    <td><strong>$${(total/1000).toFixed(0)}K</strong></td>
+                `;
+            });
+        }
+        
+        document.getElementById('canalFilter').addEventListener('change', applyFilters);
+        document.getElementById('maritalFilter').addEventListener('change', applyFilters);
+        document.getElementById('educationFilter').addEventListener('change', applyFilters);
+        
+        updateDashboard();
+    </script>
+</body>
+</html>
